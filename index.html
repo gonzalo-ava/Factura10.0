@@ -761,16 +761,7 @@
         <h3 class="modal-title"><i class="fas fa-envelope"></i> Enviar código por correo</h3>
         <button class="modal-close" onclick="closeModal('emailModal')">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="email"><i class="fas fa-envelope"></i> Correo electrónico</label>
-          <input type="email" id="email" placeholder="Ingrese su correo electrónico">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('emailModal')">Cancelar</button>
-        <button class="btn btn-primary" id="confirmEmailBtn">Enviar</button>
-      </div>
+      
     </div>
   </div>
 
@@ -805,7 +796,7 @@
     // Función de autenticación
     function authenticate() {
       const password = document.getElementById('password').value;
-      const correctPassword = 'Churqui12345678';
+      const correctPassword = 'Churqui123';
       
       if (password === correctPassword) {
         // Contraseña correcta
@@ -839,24 +830,21 @@
       }
     }
 
-    // Función para enviar contraseña por correo (simulado)
-    function sendPasswordByEmail(email) {
-      // En una implementación real, aquí se conectaría con un servicio de correo
-      alert(`Se ha enviado el código de acceso a: ${email}\n\nCódigo: Churqui12345678`);
-      
-      // Cerrar modal
-      closeModal('emailModal');
-    }
+    
 
-    // Cerrar sesión
-    function logout() {
-      localStorage.removeItem(AUTH_KEY);
-      document.getElementById('auth-container').style.display = 'flex';
-      document.getElementById('main-container').style.display = 'none';
-      document.getElementById('password').value = '';
-      attempts = 3;
-      document.getElementById('attempts-warning').style.display = 'none';
-    }
+  // Cerrar sesión
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  document.getElementById('auth-container').style.display = 'flex';
+  document.getElementById('main-container').style.display = 'none';
+  document.getElementById('password').value = '';
+  attempts = 3;
+  document.getElementById('attempts-warning').style.display = 'none';
+
+  // Redirigir a Google
+  window.location.href = "https://www.google.com";
+}
+
 
     // Función para formatear el mes en español (ej: "2025-09" -> "Septiembre - 2025")
     function formatearMes(mes) {
@@ -1385,4 +1373,5 @@
 </body>
 
 </html>
+
 
