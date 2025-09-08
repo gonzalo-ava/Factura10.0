@@ -195,6 +195,17 @@
       transform: translateY(-2px);
     }
     
+    .btn-pendiente {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-cancelado {
+      background: var(--success);
+      color: white;
+      cursor: not-allowed;
+    }
+    
     .attempts-warning {
       color: var(--danger);
       font-size: 14px;
@@ -386,6 +397,7 @@
     .actions {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
     
     .month-selector {
@@ -660,7 +672,8 @@
           </div>
           <div class="form-group">
             <label for="empresa"><i class="fas fa-building"></i> Empresa</label>
-            <input id="empresa" type="text" />
+            <input id="empresa" type="text" oninput="validarEmpresa(this)" />
+            <div class="nro-info">Solo letras y espacios</div>
           </div>
           <div class="form-group">
             <label for="fecha"><i class="fas fa-calendar-day"></i> Fecha de factura</label>
@@ -668,7 +681,8 @@
           </div>
           <div class="form-group">
             <label for="nroFactura"><i class="fas fa-file-alt"></i> Número de factura</label>
-            <input id="nroFactura" type="text" />
+            <input id="nroFactura" type="text" oninput="validarNumeroFactura(this)" />
+            <div class="nro-info">Solo números</div>
           </div>
           <div class="form-group">
             <label for="monto"><i class="fas fa-money-bill-wave"></i> Monto (Bs)</label>
@@ -750,14 +764,20 @@
     </div>
   </div>
 
-  <!-- Modal para enviar por correo -->
-  <div class="modal-overlay" id="emailModal">
+  <!-- Modal para confirmar cancelación -->
+  <div class="modal-overlay" id="cancelacionModal">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title"><i class="fas fa-envelope"></i> Enviar código por correo</h3>
-        <button class="modal-close" onclick="closeModal('emailModal')">&times;</button>
+        <h3 class="modal-title"><i class="fas fa-check-circle"></i> Confirmar cancelación</h3>
+        <button class="modal-close" onclick="closeModal('cancelacionModal')">&times;</button>
       </div>
-      
+      <div class="modal-body">
+        <p id="cancelacionModalText">¿Estás seguro de que este mes ha sido cancelado?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('cancelacionModal')">Cancelar</button>
+        <button class="btn btn-success" id="confirmCancelacionBtn">Sí, confirmar</button>
+      </div>
     </div>
   </div>
 
@@ -771,6 +791,7 @@
     let selectedMonth = '';
     let selectedMonthForDownload = '';
     let deleteCallback = null;
+    let cancelacionCallback = null;
     let editingFactura = null; // Para almacenar la factura que se está editando
     let attempts = 3; // Intentos de contraseña permitidos
 
@@ -826,21 +847,18 @@
       }
     }
 
-    
+    // Cerrar sesión
+    function logout() {
+      localStorage.removeItem(AUTH_KEY);
+      document.getElementById('auth-container').style.display = 'flex';
+      document.getElementById('main-container').style.display = 'none';
+      document.getElementById('password').value = '';
+      attempts = 3;
+      document.getElementById('attempts-warning').style.display = 'none';
 
-  // Cerrar sesión
-function logout() {
-  localStorage.removeItem(AUTH_KEY);
-  document.getElementById('auth-container').style.display = 'flex';
-  document.getElementById('main-container').style.display = 'none';
-  document.getElementById('password').value = '';
-  attempts = 3;
-  document.getElementById('attempts-warning').style.display = 'none';
-
-  // Redirigir a Google
-  window.location.href = "https://www.google.com";
-}
-
+      // Redirigir a Google
+      window.location.href = "https://www.google.com";
+    }
 
     // Función para formatear el mes en español (ej: "2025-09" -> "Septiembre - 2025")
     function formatearMes(mes) {
@@ -946,6 +964,26 @@ function logout() {
       openModal('downloadModal');
     }
 
+    // Función para mostrar modal de confirmación de cancelación
+    function showCancelacionModal(mes) {
+      const nombreMes = formatearMes(mes);
+      const modalText = `¿Estás seguro de que el mes ${nombreMes} ha sido cancelado?`;
+      
+      document.getElementById('cancelacionModalText').textContent = modalText;
+      
+      cancelacionCallback = () => {
+        // Marcar el mes como cancelado
+        if (!data[mes]) data[mes] = [];
+        data[mes].cancelado = true;
+        saveData();
+        renderMeses();
+        closeModal('cancelacionModal');
+      };
+      
+      document.getElementById('confirmCancelacionBtn').onclick = cancelacionCallback;
+      openModal('cancelacionModal');
+    }
+
     // Función para editar una factura
     function editFactura(mes, index) {
       const factura = data[mes][index];
@@ -1014,6 +1052,16 @@ function logout() {
       cancelEdit(); // Volver al modo normal
     }
 
+    // Validar campo empresa (solo letras y espacios)
+    function validarEmpresa(input) {
+      input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    }
+
+    // Validar campo número de factura (solo números)
+    function validarNumeroFactura(input) {
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
     // Establecer el mes seleccionado
     document.getElementById('mes').addEventListener('change', function(e) {
       selectedMonth = e.target.value;
@@ -1052,14 +1100,28 @@ function logout() {
         return;
       }
       
+      // Validar campos
+      const empresa = document.getElementById('empresa').value.trim();
+      const nroFactura = document.getElementById('nroFactura').value.trim();
+      
+      if (!empresa) {
+        alert('Por favor, ingresa el nombre de la empresa');
+        return;
+      }
+      
+      if (!nroFactura) {
+        alert('Por favor, ingresa el número de factura');
+        return;
+      }
+      
       // Obtener el número de orden automático
       const nroOrden = document.getElementById('nro').value;
       
       const factura = {
         nro: nroOrden,
-        empresa: document.getElementById('empresa').value,
+        empresa: empresa,
         fecha: document.getElementById('fecha').value,
-        nroFactura: document.getElementById('nroFactura').value,
+        nroFactura: nroFactura,
         monto: monto,
         timestamp: Date.now()
       };
@@ -1067,6 +1129,12 @@ function logout() {
       // Asegurarse de que el array para el mes existe
       if (!data[selectedMonth]) {
         data[selectedMonth] = [];
+      }
+      
+      // Verificar que no exceda el límite de 100 facturas por mes
+      if (data[selectedMonth].length >= 100) {
+        alert('Se ha alcanzado el límite máximo de 100 facturas por mes');
+        return;
       }
       
       data[selectedMonth].push(factura);
@@ -1227,12 +1295,21 @@ function logout() {
         
         const totales = calcTotales(data[mes]);
         const nombreMes = formatearMes(mes);
+        const estaCancelado = data[mes].cancelado || false;
         const div = document.createElement('div');
         div.className = 'mes-resumen card';
         div.innerHTML = `
           <div class="mes-header">
             <h3>${nombreMes}</h3>
             <div class="actions">
+              ${estaCancelado ? 
+                `<button class="btn btn-cancelado btn-sm" disabled>
+                  <i class="fas fa-check-circle"></i> Cancelado
+                </button>` : 
+                `<button class="btn btn-pendiente btn-sm" onclick="showCancelacionModal('${mes}')">
+                  <i class="fas fa-money-bill-wave"></i> Pendiente
+                </button>`
+              }
               <button class="btn btn-secondary btn-sm" onclick="toggleFacturas('${mes}')">
                 <i class="fas fa-list"></i> Ver Detalles
               </button>
