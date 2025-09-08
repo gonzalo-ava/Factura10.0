@@ -616,11 +616,7 @@
       </div>
     </div>
     
-    <div class="recovery-option">
-      <a href="#" class="recovery-link" id="sendPasswordBtn">
-        <i class="fas fa-envelope"></i> Enviar código de acceso a mi correo
-      </a>
-    </div>
+    
   </div>
   
   <!-- Mensaje de bloqueo -->
@@ -1068,6 +1064,11 @@ function logout() {
         timestamp: Date.now()
       };
       
+      // Asegurarse de que el array para el mes existe
+      if (!data[selectedMonth]) {
+        data[selectedMonth] = [];
+      }
+      
       data[selectedMonth].push(factura);
       saveData();
       renderMeses();
@@ -1222,7 +1223,7 @@ function logout() {
       
       // Ordenar meses de más reciente a más antiguo
       Object.keys(data).sort().reverse().forEach(mes => {
-        if (data[mes].length === 0) return;
+        if (!data[mes] || data[mes].length === 0) return;
         
         const totales = calcTotales(data[mes]);
         const nombreMes = formatearMes(mes);
@@ -1261,6 +1262,9 @@ function logout() {
     function toggleFacturas(mes) {
       const div = document.getElementById('facturas-'+mes);
       if (div.classList.contains('hidden')) {
+        // Verificar que existan facturas para este mes
+        if (!data[mes] || data[mes].length === 0) return;
+        
         // Ordenar facturas por número de orden
         const facturas = data[mes].slice().sort((a, b) => parseInt(a.nro) - parseInt(b.nro));
         
@@ -1345,19 +1349,6 @@ function logout() {
       
       document.getElementById('logoutBtn').addEventListener('click', logout);
       
-      document.getElementById('sendPasswordBtn').addEventListener('click', function() {
-        openModal('emailModal');
-      });
-      
-      document.getElementById('confirmEmailBtn').addEventListener('click', function() {
-        const email = document.getElementById('email').value;
-        if (email) {
-          sendPasswordByEmail(email);
-        } else {
-          alert('Por favor, ingrese un correo electrónico válido');
-        }
-      });
-      
       document.getElementById('addBtn').addEventListener('click', addFactura);
       document.getElementById('updateBtn').addEventListener('click', updateFactura);
       document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
@@ -1371,7 +1362,6 @@ function logout() {
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
-
 </html>
 
 
